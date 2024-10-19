@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template para un MySQL NDB Cluster y MySQL Router con instancias publicas'
+
+Resources:
+  # Seguridad
+  MySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security group para EC2 instances'
+      VpcId: "vpc-0ba4a148310c8d45f"  # ID de la VPC existente
+      SecurityGroupIngress:
+      ## Puerto 22 para conectarse por SSH
+        - IpProtocol: 'tcp'
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'  #(Permite todas las ip's)
+      
+      ## Puerto 3306 para MYSQL
+        - IpProtocol: 'tcp'
+          FromPort: '3306'
+          ToPort: '3306'
+          CidrIp: '0.0.0.0/0'  #(Permite todas las ip's)
+
+  # Instancias para el NDB Cluster (2 Data Nodes)
+  NDBNode1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      ImageId: 'ami-0866a3c8686eaeeba'  # AMI de Ubuntu para us-east-1
+      SecurityGroupIds:
+        - Ref: MySecurityGroup
+      SubnetId: "subnet-096c70b6049588923"  # ID de la Subnet us-east-1a
+      KeyName: 'shh-key-openssh'
+      Tags:
+        - Key: 'Name'
+          Value: 'Instancia-Esclavo1'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install mysql-server -y
+          sudo systemctl start mysql
+          
+  NDBNode2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      ImageId: 'ami-0866a3c8686eaeeba'  # AMI de Ubuntu para us-east-1
+      SecurityGroupIds:
+        - Ref: MySecurityGroup
+      SubnetId: "subnet-096c70b6049588923"  # ID de la Subnet existente
+      KeyName: 'shh-key-openssh'
+      Tags:
+        - Key: 'Name'
+          Value: 'Instancia-Esclavo2'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install mysql-server -y
+          sudo systemctl start mysql
+ 
+  NDBNode3:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      ImageId: 'ami-0866a3c8686eaeeba'  # AMI de Ubuntu para us-east-1
+      SecurityGroupIds:
+        - Ref: MySecurityGroup
+      SubnetId: "subnet-096c70b6049588923"  # ID de la Subnet existente
+      KeyName: 'shh-key-openssh'
+      Tags:
+        - Key: 'Name'
+          Value: 'Instancia-Maestro'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install mysql-server -y
+          sudo systemctl start mysql
+
+
+  # Instancia para MySQL Router
+  MySQLRouterEC2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      ImageId: 'ami-0866a3c8686eaeeba'  # AMI de Ubuntu para us-east-1
+      SecurityGroupIds:
+        - Ref: MySecurityGroup
+      SubnetId: "subnet-096c70b6049588923"  # ID de la Subnet existente
+      KeyName: 'shh-key-openssh'
+      Tags:
+        - Key: 'Name'
+          Value: 'MySQL-Router'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+
+          # Instalar mysql-router
+          sudo apt install mysql-router
