@@ -1,0 +1,6 @@
+export ENDPOINT_ROUTER=107.21.1.53
+export ENDPOINT_WRITE_PORT=7000
+export ENDPOINT_READ_PORT=7001
+export ENDPOINT_DB="sbench"
+export TEST_USER="sysbench"
+export TEST_USER_PASSWORD="<3|2W1eZbCa+"
